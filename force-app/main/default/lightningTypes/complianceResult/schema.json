@@ -1,12 +1,5 @@
 {
-  "$schema": "https://schema.salesforce.com/lightning-type-schema.json",
-  "type": "object",
-  "properties": {
-    "lightning:type": {
-      "type": "string",
-      "const": "@apexClassType/c__ComplianceMetrics"
-    }
-  },
-  "additionalProperties": false,
-  "required": ["lightning:type"]
+    "title": "Compliance Result",
+    "description": "Custom Lightning Type for Compliance Check Results",
+    "lightning:type": "@apexClassType/c__ComplianceMetrics"
 }
