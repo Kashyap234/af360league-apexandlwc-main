@@ -1,0 +1,6 @@
+{
+  "component": "c:complianceCheckerCard",
+  "valueMapping": {
+    "value": "value"
+  }
+}

@@ -281,6 +281,7 @@ global with sharing class ComplianceActionChecker {
 
     /**
      * Step 4: Calculate Penalty using FormulaEval namespace
+     * FIXED: Corrected to use Formula.builder() pattern
      * 
      * @param formulaRecord CompliancePenaltyFormula__mdt record with the formula
      * @param observedPrice Observed price
@@ -308,11 +309,14 @@ global with sharing class ComplianceActionChecker {
                 dailyVolume
             );
             
-            Object result;
-
-            // TODO FOR THE CHALLENGE: Implement Formula Eval with ComplianceActionChecker.PenaltyContextWrapper.class type. 
-            // You can copy the Formula Eval expression from the video: https://youtu.be/kCo3L27FjP0?si=YLerl6HNZ-moWN5U&t=5028  
+            // FIXED: Use correct FormulaEval builder pattern
+            FormulaEval.FormulaBuilder builder = Formula.builder()
+                .withType(ComplianceActionChecker.PenaltyContextWrapper.class)
+                .withReturnType(FormulaEval.FormulaReturnType.DECIMAL)
+                .withFormula(formulaText);
             
+            FormulaEval.FormulaInstance instance = builder.build();
+            Object result = instance.evaluate(contextWrapper);
 
             Decimal penalty = 0;
             if (result instanceof Decimal) {
@@ -383,4 +387,42 @@ global with sharing class ComplianceActionChecker {
         }
     }
     
+    // Custom Exception class
+    public class ComplianceException extends Exception {}
+    
+    // ComplianceMetrics wrapper class (add this if missing from your code)
+    global class ComplianceMetrics {
+        @InvocableVariable
+        global Decimal targetPrice;
+        @InvocableVariable
+        global Decimal observedPrice;
+        @InvocableVariable
+        global Decimal priceGap;
+        @InvocableVariable
+        global String statusMessage;
+        @InvocableVariable
+        global String statusColor;
+        @InvocableVariable
+        global Boolean success;
+        @InvocableVariable
+        global String errorMessage;
+        @InvocableVariable
+        global Decimal penalty;
+        @InvocableVariable
+        global String storeType;
+        
+        global ComplianceMetrics(Decimal targetPrice, Decimal observedPrice, Decimal priceGap, 
+                                String statusMessage, String statusColor, Boolean success, 
+                                String errorMessage, Decimal penalty, String storeType) {
+            this.targetPrice = targetPrice;
+            this.observedPrice = observedPrice;
+            this.priceGap = priceGap;
+            this.statusMessage = statusMessage;
+            this.statusColor = statusColor;
+            this.success = success;
+            this.errorMessage = errorMessage;
+            this.penalty = penalty;
+            this.storeType = storeType;
+        }
+    }
 }

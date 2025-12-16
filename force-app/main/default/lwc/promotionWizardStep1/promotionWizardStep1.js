@@ -1,10 +1,13 @@
 import { LightningElement, api } from 'lwc';
 
-/** TODO FOR THE CHALLENGE: import the state manager, and the context modules */
+// Import the state manager and context modules
+import { fromContext } from '@lwc/state';
+import promotionStateManager from 'c/promotionStateManager';
 
 export default class PromotionWizardStep1 extends LightningElement {
     
-    /** TODO FOR THE CHALLENGE: initialize/inherit the state from the parent */
+    // Initialize/inherit the state from the parent
+    promotionState = fromContext(promotionStateManager);
 
     promotionName;
 
@@ -22,7 +25,8 @@ export default class PromotionWizardStep1 extends LightningElement {
             return false;
         }
         
-        // TODO FOR THE CHALLENGE: Update the promotion name in the state
+        // Update the promotion name in the state
+        this.promotionState.value.updatePromotionName(this.promotionName);
         
         return true;
     }

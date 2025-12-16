@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.salesforce.com/lightning-type-schema.json",
+  "type": "object",
+  "properties": {
+    "lightning:type": {
+      "type": "string",
+      "const": "@apexClassType/c__ComplianceMetrics"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["lightning:type"]
+}
