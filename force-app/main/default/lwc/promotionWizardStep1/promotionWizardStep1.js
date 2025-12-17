@@ -1,32 +1,36 @@
-import { LightningElement, api } from 'lwc';
-
-// Import the state manager and context modules
-import { fromContext } from '@lwc/state';
-import promotionStateManager from 'c/promotionStateManager';
+import { LightningElement, api, track } from 'lwc';
+import promotionStateService from 'c/promotionStateService';
 
 export default class PromotionWizardStep1 extends LightningElement {
+    stateService = promotionStateService;
     
-    // Initialize/inherit the state from the parent
-    promotionState = fromContext(promotionStateManager);
+    @track promotionName = '';
 
-    promotionName;
-
-    connectedCallback(){
-        this.promotionName = this.promotionState?.value?.promotionName;
+    connectedCallback() {
+        const state = this.stateService.getState();
+        this.promotionName = state.promotionName || '';
     }
 
     handleChange(event) {
         this.promotionName = event.detail.value;
+        console.log('Promotion name changed to:', this.promotionName);
     }
 
     @api
-    allValid(){
-        if(this.promotionName === undefined || this.promotionName === ''){
+    allValid() {
+        console.log('Step1 allValid called. Promotion name:', this.promotionName);
+        
+        if (!this.promotionName || this.promotionName.trim() === '') {
+            console.log('Validation failed: promotion name is empty');
             return false;
         }
         
-        // Update the promotion name in the state
-        this.promotionState.value.updatePromotionName(this.promotionName);
+        console.log('Validation passed. Updating state...');
+        this.stateService.updatePromotionName(this.promotionName);
+        
+        // Verify the state was updated
+        const updatedState = this.stateService.getState();
+        console.log('State after update:', updatedState);
         
         return true;
     }

@@ -1,38 +1,63 @@
 import { LightningElement, api, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
-
-// Import and Initialize the state manager
-import { provideContext } from '@lwc/state';
-import promotionStateManager from 'c/promotionStateManager';
-
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import savePromotion from '@salesforce/apex/PromotionCreatorCtrl.savePromotion';
 
+// Import the state service
+import promotionStateService from 'c/promotionStateService';
+
 export default class PromotionCreationWizard extends NavigationMixin(LightningElement) {
-    @api recordId; // Account Id from record page context
-
+    @api recordId;
     currentStep = 1;
-
-    // Initialize the state manager
-    promotionState = provideContext(this, promotionStateManager);
-
     @track isSaving = false;
 
+    // Store reference to state service
+    stateService = promotionStateService;
+
+    connectedCallback() {
+        // Reset state when wizard is opened
+        this.stateService.reset();
+    }
+
     handleNext() {
+        console.log('handleNext called. Current step:', this.currentStep);
+        
         if (this.currentStep === 1) {
             const element = this.template.querySelector('c-promotion-wizard-step1');
-            if (element.allValid()) {
-                this.currentStep++;
+            console.log('Step1 element found:', !!element);
+            
+            if (element) {
+                const isValid = element.allValid();
+                console.log('Step1 validation result:', isValid);
+                
+                if (isValid) {
+                    console.log('Moving to step 2');
+                    this.currentStep++;
+                } else {
+                    this.showToast('Validation Error', 'Please enter a promotion name.', 'error');
+                }
             } else {
-                this.showToast('Validation Error', 'Please enter a promotion name.', 'error');
+                console.error('Step1 element not found');
+                this.showToast('Error', 'Unable to validate step 1.', 'error');
             }
         } else if (this.currentStep === 2) {
             const element = this.template.querySelector('c-promotion-wizard-step2');
-            if (element.allValid()) {
-                this.currentStep++;
+            console.log('Step2 element found:', !!element);
+            
+            if (element) {
+                const isValid = element.allValid();
+                console.log('Step2 validation result:', isValid);
+                
+                if (isValid) {
+                    console.log('Moving to step 3');
+                    this.currentStep++;
+                } else {
+                    this.showToast('Validation Error', 'Please select at least one product with a valid discount.', 'error');
+                }
             } else {
-                this.showToast('Validation Error', 'Please select at least one product with a valid discount.', 'error');
+                console.error('Step2 element not found');
+                this.showToast('Error', 'Unable to validate step 2.', 'error');
             }
         }
     }
@@ -49,15 +74,13 @@ export default class PromotionCreationWizard extends NavigationMixin(LightningEl
             return;
         }
 
-        // Get final promotion data from step 3
         const promotionData = step3Element.getPromotionData();
         
-        // Build the payload for Apex
         const payload = {
             promotionName: promotionData.promotionName,
             accountId: this.recordId,
-            templateId: null, // Can be extended to include template from Step 1
-            startDate: null,  // Can be extended to include dates from Step 1
+            templateId: null,
+            startDate: null,
             endDate: null,
             products: promotionData.products.map(p => ({
                 productId: p.productId,
@@ -79,18 +102,14 @@ export default class PromotionCreationWizard extends NavigationMixin(LightningEl
                 promotionDataJson: JSON.stringify(payload) 
             });
             
-            console.log('Save result:', result);
-            
             this.showToast(
                 'Success', 
                 result.message || 'Promotion created successfully!', 
                 'success'
             );
             
-            // Close the modal/action
             this.closeAction();
             
-            // Navigate to the new promotion record
             if (result.promotionId) {
                 this.navigateToRecord(result.promotionId);
             }
@@ -105,7 +124,6 @@ export default class PromotionCreationWizard extends NavigationMixin(LightningEl
 
     closeAction() {
         this.dispatchEvent(new CloseActionScreenEvent());
-        // Also dispatch custom close event for other contexts
         this.dispatchEvent(new CustomEvent('close'));
     }
 

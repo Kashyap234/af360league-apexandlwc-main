@@ -1,12 +1,11 @@
 import { LightningElement, api, track } from 'lwc';
-import { fromContext } from '@lwc/state';
-import promotionStateManager from 'c/promotionStateManager';
+import promotionStateService from 'c/promotionStateService';
 import getRetailStores from '@salesforce/apex/PromotionCreatorCtrl.getRetailStores';
 
 export default class PromotionWizardStep3 extends LightningElement {
-    promotionState = fromContext(promotionStateManager);
+    stateService = promotionStateService;
 
-    @api recordId; // Account Id passed from parent wizard
+    @api recordId;
 
     @track stores = [];
     @track selectedStoreIds = new Set();
@@ -20,7 +19,8 @@ export default class PromotionWizardStep3 extends LightningElement {
     }
 
     restoreSelectionsFromState() {
-        const stateStores = this.promotionState?.value?.chosenStores || [];
+        const state = this.stateService.getState();
+        const stateStores = state.chosenStores || [];
         stateStores.forEach(store => {
             this.selectedStoreIds.add(store.storeId);
         });
@@ -52,7 +52,6 @@ export default class PromotionWizardStep3 extends LightningElement {
     handleCheckboxChange(event) {
         const storeId = event.target.dataset.id;
         const isChecked = event.target.checked;
-        const store = this.stores.find(s => s.id === storeId);
 
         if (isChecked) {
             this.selectedStoreIds.add(storeId);
@@ -60,7 +59,6 @@ export default class PromotionWizardStep3 extends LightningElement {
             this.selectedStoreIds.delete(storeId);
         }
 
-        // Update the stores array to reflect selection change
         this.stores = this.stores.map(s => {
             if (s.id === storeId) {
                 return { ...s, isSelected: isChecked };
@@ -122,13 +120,14 @@ export default class PromotionWizardStep3 extends LightningElement {
         return this.stores.filter(s => this.selectedStoreIds.has(s.id));
     }
 
-    // Get summary data from state for display
     get promotionName() {
-        return this.promotionState?.value?.promotionName || 'Untitled Promotion';
+        const state = this.stateService.getState();
+        return state.promotionName || 'Untitled Promotion';
     }
 
     get selectedProducts() {
-        return this.promotionState?.value?.chosenProducts || [];
+        const state = this.stateService.getState();
+        return state.chosenProducts || [];
     }
 
     get hasSelectedProducts() {
@@ -137,13 +136,11 @@ export default class PromotionWizardStep3 extends LightningElement {
 
     @api
     allValid() {
-        // Check if at least one store is selected
         if (this.selectedStoreIds.size === 0) {
             this.error = 'Please select at least one store.';
             return false;
         }
 
-        // Save selections to state
         const storesArray = this.stores
             .filter(s => this.selectedStoreIds.has(s.id))
             .map(s => ({
@@ -152,7 +149,7 @@ export default class PromotionWizardStep3 extends LightningElement {
                 locationGroup: s.locationGroup
             }));
         
-        this.promotionState.value.updateStores(storesArray);
+        this.stateService.updateStores(storesArray);
         
         this.error = null;
         return true;
@@ -160,9 +157,10 @@ export default class PromotionWizardStep3 extends LightningElement {
 
     @api
     getPromotionData() {
+        const state = this.stateService.getState();
         return {
-            promotionName: this.promotionName,
-            products: this.selectedProducts,
+            promotionName: state.promotionName,
+            products: state.chosenProducts,
             stores: this.selectedStoresList.map(s => ({
                 storeId: s.id,
                 storeName: s.name,
